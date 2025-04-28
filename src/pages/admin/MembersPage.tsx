@@ -13,10 +13,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MemberTable from '@/components/admin/MemberTable';
+import QRScanner from '@/components/admin/QRScanner';
 import { useMockData } from '@/context/MockDataContext';
 import { Member } from '@/types';
-import { Plus } from 'lucide-react';
+import { Plus, QrCode, Users } from 'lucide-react';
 import AddMemberForm from '@/components/admin/AddMemberForm';
 import RecordPaymentForm from '@/components/admin/RecordPaymentForm';
 
@@ -92,11 +94,33 @@ const MembersPage = () => {
           </Button>
         </div>
         
-        <MemberTable 
-          members={members} 
-          onEdit={handleEditClick}
-          onDelete={handleDeleteClick}
-        />
+        <Tabs defaultValue="list" className="mb-6">
+          <TabsList>
+            <TabsTrigger value="list" className="flex items-center">
+              <Users className="mr-2 h-4 w-4" /> 
+              Member List
+            </TabsTrigger>
+            <TabsTrigger value="scan" className="flex items-center">
+              <QrCode className="mr-2 h-4 w-4" /> 
+              QR Scanner
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="list" className="pt-4">
+            <MemberTable 
+              members={members} 
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+              onPaymentClick={handlePaymentClick}
+            />
+          </TabsContent>
+          
+          <TabsContent value="scan" className="pt-4">
+            <div className="max-w-md mx-auto">
+              <QRScanner />
+            </div>
+          </TabsContent>
+        </Tabs>
         
         {/* Add Member Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

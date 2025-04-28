@@ -11,16 +11,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Member } from '@/types';
-import { Edit, Trash2, Search } from 'lucide-react';
+import { Edit, Trash2, Search, IndianRupee, QrCode } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface MemberTableProps {
   members: Member[];
   onEdit: (member: Member) => void;
   onDelete: (id: string) => void;
+  onPaymentClick?: (member: Member) => void;
 }
 
-const MemberTable: React.FC<MemberTableProps> = ({ members, onEdit, onDelete }) => {
+const MemberTable: React.FC<MemberTableProps> = ({ members, onEdit, onDelete, onPaymentClick }) => {
   const [searchQuery, setSearchQuery] = useState('');
   
   const filteredMembers = members.filter(member => 
@@ -94,11 +95,24 @@ const MemberTable: React.FC<MemberTableProps> = ({ members, onEdit, onDelete }) 
                   <TableCell>{new Date(member.membershipEndDate).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      {onPaymentClick && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => onPaymentClick(member)}
+                          className="h-8 w-8 p-0 border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                          title="Record Payment"
+                        >
+                          <IndianRupee className="h-4 w-4" />
+                          <span className="sr-only">Payment</span>
+                        </Button>
+                      )}
                       <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={() => onEdit(member)}
                         className="h-8 w-8 p-0"
+                        title="Edit Member"
                       >
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
@@ -108,6 +122,7 @@ const MemberTable: React.FC<MemberTableProps> = ({ members, onEdit, onDelete }) 
                         size="sm" 
                         onClick={() => onDelete(member.id)}
                         className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50"
+                        title="Delete Member"
                       >
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Delete</span>

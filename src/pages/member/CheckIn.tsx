@@ -3,9 +3,11 @@ import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import CheckInCard from '@/components/member/CheckInCard';
+import MemberQRCode from '@/components/member/MemberQRCode';
 import { useMockData } from '@/context/MockDataContext';
 import { Member } from '@/types';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, QrCode } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const CheckIn = () => {
   const { currentUser, attendance } = useMockData();
@@ -54,9 +56,40 @@ const CheckIn = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Check-In Card */}
+          {/* Check-In Section */}
           <div className="md:col-span-1">
-            <CheckInCard />
+            <Tabs defaultValue="manual">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="manual">Manual Check-in</TabsTrigger>
+                <TabsTrigger value="qr">QR Code</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="manual">
+                <CheckInCard />
+              </TabsContent>
+              
+              <TabsContent value="qr">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <QrCode className="mr-2 h-5 w-5" />
+                      QR Check-in
+                    </CardTitle>
+                    <CardDescription>
+                      Show this QR code at the gym entrance
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex justify-center">
+                      <MemberQRCode size={200} />
+                    </div>
+                    <p className="text-sm text-gray-500 text-center mt-4">
+                      Your QR code contains your unique membership information
+                    </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
           
           {/* Attendance History */}

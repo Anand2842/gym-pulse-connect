@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { useMockData } from '@/context/MockDataContext';
 import { Member } from '@/types';
 import MembershipCard from '@/components/member/MembershipCard';
+import MemberQRCode from '@/components/member/MemberQRCode';
 import { CalendarDays, Clock, IndianRupee, CheckCircle2, BarChart3 } from 'lucide-react';
 
 const MemberDashboard = () => {
@@ -204,8 +205,12 @@ const MemberDashboard = () => {
             </Card>
           </div>
           
-          {/* Membership Status */}
+          {/* Right Column - Membership Status */}
           <div className="space-y-6">
+            {/* QR Code Card - Added for quick check-in */}
+            <MemberQRCode size={180} />
+            
+            {/* Membership Status */}
             <MembershipCard />
             
             {/* Quick Actions */}
