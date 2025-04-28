@@ -1,26 +1,43 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { MockDataProvider } from "@/context/MockDataContext";
 import Index from "./pages/Index";
+import Login from "./pages/Login";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import MembersPage from "./pages/admin/MembersPage";
+import PaymentsPage from "./pages/admin/PaymentsPage";
+import MemberDashboard from "./pages/member/MemberDashboard";
+import CheckIn from "./pages/member/CheckIn";
+import Workout from "./pages/member/Workout";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <MockDataProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/members" element={<MembersPage />} />
+            <Route path="/admin/payments" element={<PaymentsPage />} />
+            <Route path="/member/dashboard" element={<MemberDashboard />} />
+            <Route path="/member/check-in" element={<CheckIn />} />
+            <Route path="/member/workout" element={<Workout />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </MockDataProvider>
   </QueryClientProvider>
 );
 
