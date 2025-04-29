@@ -1,39 +1,67 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { useMockData } from '@/context/MockDataContext';
 import { Member } from '@/types';
-import { CheckCircle, Camera, XCircle } from 'lucide-react';
+import { CheckCircle, ScanLine, XCircle } from 'lucide-react';
 
 const QRScanner: React.FC = () => {
   const { members, recordAttendance } = useMockData();
   const [scanning, setScanning] = useState(false);
   const [scannedMember, setScannedMember] = useState<Member | null>(null);
   const [success, setSuccess] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanLines, setScanLines] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
   
-  // This is a mock implementation since we can't access real camera in this environment
-  // In a real implementation, we'd use a library like react-qr-reader
+  // Effect to animate the scan progress
+  useEffect(() => {
+    if (scanning) {
+      let progress = 0;
+      const intervalId = setInterval(() => {
+        progress += 4;
+        setScanProgress(Math.min(progress, 100));
+        if (progress >= 100) {
+          clearInterval(intervalId);
+          // Simulate successful scan after progress reaches 100%
+          setTimeout(() => {
+            const randomIndex = Math.floor(Math.random() * members.length);
+            const mockQrData = JSON.stringify({
+              id: members[randomIndex].id,
+              name: members[randomIndex].name,
+              timestamp: new Date().toISOString()
+            });
+            handleQrResult(mockQrData);
+          }, 500);
+        }
+      }, 100);
+      
+      // Start scanning animation
+      setScanLines(true);
+      
+      return () => {
+        clearInterval(intervalId);
+        setScanLines(false);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+      };
+    }
+  }, [scanning, members]);
+  
   const startScanning = async () => {
     setScanning(true);
     setSuccess(false);
     setScannedMember(null);
+    setScanProgress(0);
     
-    // Simulate QR scanning process
-    setTimeout(() => {
-      // In a real app, this would come from the QR scanner
-      const mockQrData = JSON.stringify({
-        id: members[0].id,
-        name: members[0].name,
-        timestamp: new Date().toISOString()
-      });
-      
-      handleQrResult(mockQrData);
-    }, 2000);
+    // In a real implementation, we'd access the camera here
+    console.log('Starting camera scan simulation');
   };
   
   const handleQrResult = async (result: string) => {
@@ -76,7 +104,7 @@ const QRScanner: React.FC = () => {
   
   const stopScanning = () => {
     setScanning(false);
-    // In a real implementation, we'd stop the camera stream here
+    setScanProgress(0);
   };
 
   return (
@@ -109,17 +137,42 @@ const QRScanner: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="w-full max-w-sm aspect-square relative mb-4">
+            <div className="w-full max-w-sm aspect-square relative mb-4 overflow-hidden rounded-lg border-2 border-dashed">
               {scanning ? (
                 <>
-                  <Skeleton className="w-full h-full absolute" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Camera className="h-12 w-12 text-gray-400 animate-pulse" />
+                  <div className="w-full h-full bg-black/10 absolute inset-0 flex items-center justify-center">
+                    {/* Scan lines animation */}
+                    {scanLines && (
+                      <div className="absolute w-full h-1 bg-blue-500 opacity-70" 
+                        style={{ 
+                          top: `${(scanProgress % 100)}%`, 
+                          boxShadow: '0 0 10px 2px rgba(59, 130, 246, 0.6)', 
+                          transition: 'top 0.3s ease-in-out' 
+                        }} 
+                      />
+                    )}
+                    <div className="z-10">
+                      <ScanLine className="h-12 w-12 text-gym-primary animate-pulse" />
+                    </div>
+                    
+                    {/* Corners for scan effect */}
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-blue-500"></div>
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-blue-500"></div>
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-blue-500"></div>
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-blue-500"></div>
+                  </div>
+                  
+                  {/* Progress indicator */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200">
+                    <div 
+                      className="h-full bg-gym-primary transition-all duration-300 ease-out"
+                      style={{ width: `${scanProgress}%` }}
+                    ></div>
                   </div>
                 </>
               ) : (
-                <div className="w-full h-full border-2 border-dashed rounded-lg flex items-center justify-center">
-                  <Camera className="h-12 w-12 text-gray-400" />
+                <div className="w-full h-full flex items-center justify-center">
+                  <ScanLine className="h-12 w-12 text-gray-400" />
                 </div>
               )}
               <video
@@ -139,13 +192,15 @@ const QRScanner: React.FC = () => {
               </Button>
             ) : (
               <Button onClick={startScanning} className="mb-4">
-                <Camera className="h-4 w-4 mr-2" />
+                <ScanLine className="h-4 w-4 mr-2" />
                 Start Scanning
               </Button>
             )}
             
             <p className="text-sm text-gray-500 text-center">
-              Position the QR code within the camera frame to scan
+              {scanning 
+                ? "Scanning... Please hold the QR code steady" 
+                : "Position the QR code within the camera frame to scan"}
             </p>
           </>
         )}
