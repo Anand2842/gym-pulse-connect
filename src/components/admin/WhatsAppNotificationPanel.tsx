@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CheckCircle2, Send, Template } from 'lucide-react';
+import { CheckCircle2, Send, FileText } from 'lucide-react';
 import { useMockData } from '@/context/MockDataContext';
 import { Member } from '@/types';
 import { toast } from '@/components/ui/use-toast';
@@ -179,7 +179,10 @@ const WhatsAppNotificationPanel: React.FC = () => {
                 <SelectLabel>Message Templates</SelectLabel>
                 {MESSAGE_TEMPLATES.map(template => (
                   <SelectItem key={template.id} value={template.id}>
-                    {template.name}
+                    <div className="flex items-center gap-2">
+                      <FileText size={16} />
+                      {template.name}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectGroup>
