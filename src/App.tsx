@@ -10,6 +10,9 @@ import Login from "./pages/Login";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import MembersPage from "./pages/admin/MembersPage";
 import PaymentsPage from "./pages/admin/PaymentsPage";
+import AdvancedAnalyticsPage from "./pages/admin/AdvancedAnalyticsPage";
+import WhatsAppPage from "./pages/admin/WhatsAppPage";
+import Settings from "./pages/admin/Settings";
 import MemberDashboard from "./pages/member/MemberDashboard";
 import CheckIn from "./pages/member/CheckIn";
 import Workout from "./pages/member/Workout";
@@ -30,6 +33,9 @@ const App = () => (
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/members" element={<MembersPage />} />
             <Route path="/admin/payments" element={<PaymentsPage />} />
+            <Route path="/admin/analytics" element={<AdvancedAnalyticsPage />} />
+            <Route path="/admin/whatsapp" element={<WhatsAppPage />} />
+            <Route path="/admin/settings" element={<Settings />} />
             <Route path="/member/dashboard" element={<MemberDashboard />} />
             <Route path="/member/check-in" element={<CheckIn />} />
             <Route path="/member/workout" element={<Workout />} />

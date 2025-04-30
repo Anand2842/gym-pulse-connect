@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 import { 
   User, 
@@ -7,7 +6,8 @@ import {
   AttendanceRecord, 
   Payment, 
   MockDataContext as MockDataContextType,
-  DashboardStats 
+  DashboardStats,
+  WhatsAppNotification 
 } from '../types';
 import { toast } from 'sonner';
 
@@ -142,6 +142,7 @@ export const MockDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [attendance, setAttendance] = useState<AttendanceRecord[]>(sampleAttendance);
   const [payments, setPayments] = useState<Payment[]>(samplePayments);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [whatsappNotifications, setWhatsappNotifications] = useState<WhatsAppNotification[]>([]);
 
   const login = async (email: string, password: string): Promise<User | null> => {
     // Simple mock authentication
@@ -261,6 +262,32 @@ export const MockDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return newPayment;
   };
 
+  const sendWhatsAppNotification = async (memberId: string, message: string): Promise<WhatsAppNotification> => {
+    // Get member
+    const member = members.find(m => m.id === memberId);
+    if (!member) {
+      throw new Error('Member not found');
+    }
+    
+    // Create notification record
+    const notification: WhatsAppNotification = {
+      id: `wn${Date.now()}-${memberId}`,
+      memberId,
+      message,
+      sentAt: new Date().toISOString(),
+      status: 'delivered',
+    };
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Add to notifications collection
+    setWhatsappNotifications(prev => [...prev, notification]);
+    
+    // Return the notification
+    return notification;
+  };
+
   const getDashboardStats = (): DashboardStats => {
     const today = new Date().toISOString().split('T')[0];
     const currentMonth = new Date().getMonth();
@@ -306,6 +333,7 @@ export const MockDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       admins,
       attendance,
       payments,
+      whatsappNotifications,
       login,
       logout,
       addMember,
@@ -313,6 +341,7 @@ export const MockDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       deleteMember,
       recordAttendance,
       recordPayment,
+      sendWhatsAppNotification,
       getDashboardStats
     }}>
       {children}

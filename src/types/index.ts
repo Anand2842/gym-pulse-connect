@@ -44,6 +44,14 @@ export interface Payment {
   status: 'completed' | 'pending' | 'failed';
 }
 
+export interface WhatsAppNotification {
+  id: string;
+  memberId: string;
+  message: string;
+  sentAt: string;
+  status: 'sent' | 'delivered' | 'read' | 'failed';
+}
+
 export interface WorkoutSession {
   id: string;
   memberId: string;
@@ -74,6 +82,7 @@ export interface MockDataContext {
   admins: Admin[];
   attendance: AttendanceRecord[];
   payments: Payment[];
+  whatsappNotifications: WhatsAppNotification[];
   login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
   addMember: (member: Omit<Member, 'id' | 'role'>) => Promise<Member>;
@@ -81,5 +90,6 @@ export interface MockDataContext {
   deleteMember: (id: string) => Promise<boolean>;
   recordAttendance: (memberId: string) => Promise<AttendanceRecord>;
   recordPayment: (payment: Omit<Payment, 'id'>) => Promise<Payment>;
+  sendWhatsAppNotification: (memberId: string, message: string) => Promise<WhatsAppNotification>;
   getDashboardStats: () => DashboardStats;
 }
