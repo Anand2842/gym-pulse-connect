@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { useMockData } from '@/context/MockDataContext';
+import GymGalleryCarousel from '@/components/gallery/GymGalleryCarousel';
 
 const Index = () => {
   const { currentUser } = useMockData();
@@ -44,7 +45,22 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Gallery Section */}
       <section className="py-12 px-4 sm:py-16 bg-white">
+        <div className="container mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              Our Gym Facilities
+            </h2>
+            <p className="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+              Take a look at our state-of-the-art equipment and facilities
+            </p>
+          </div>
+          <GymGalleryCarousel />
+        </div>
+      </section>
+
+      <section className="py-12 px-4 sm:py-16 bg-gray-50">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
@@ -100,7 +116,7 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="py-12 px-4 sm:py-16 bg-gray-50">
+      <section className="py-12 px-4 sm:py-16 bg-white">
         <div className="container mx-auto">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-gray-900">Ready to modernize your gym management?</h2>
@@ -118,7 +134,7 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="py-12 px-4 sm:py-16 bg-white">
+      <section className="py-12 px-4 sm:py-16 bg-gray-50">
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900">Pricing</h2>

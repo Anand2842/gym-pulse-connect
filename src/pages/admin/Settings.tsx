@@ -4,6 +4,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import WhatsAppSettings from '@/components/admin/WhatsAppSettings';
+import GalleryManager from '@/components/admin/gallery/GalleryManager';
 
 const Settings: React.FC = () => {
   return (
@@ -12,9 +13,10 @@ const Settings: React.FC = () => {
         <h1 className="text-3xl font-bold mb-6">Admin Settings</h1>
         
         <Tabs defaultValue="notifications" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3 mb-8">
+          <TabsList className="grid w-full max-w-md grid-cols-4 mb-8">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="gallery">Gallery</TabsTrigger>
             <TabsTrigger value="integrations">Integrations</TabsTrigger>
           </TabsList>
           
@@ -36,6 +38,10 @@ const Settings: React.FC = () => {
           
           <TabsContent value="notifications" className="space-y-6">
             <WhatsAppSettings />
+          </TabsContent>
+          
+          <TabsContent value="gallery" className="space-y-6">
+            <GalleryManager />
           </TabsContent>
           
           <TabsContent value="integrations" className="space-y-6">

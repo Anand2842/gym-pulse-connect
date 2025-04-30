@@ -7,9 +7,35 @@ import {
   Payment, 
   MockDataContext as MockDataContextType,
   DashboardStats,
-  WhatsAppNotification 
+  WhatsAppNotification,
+  GymGalleryImage
 } from '../types';
 import { toast } from 'sonner';
+
+// Sample gallery images with placeholder URLs
+const sampleGalleryImages: GymGalleryImage[] = [
+  {
+    id: 'img1',
+    url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+    caption: 'Strength training area',
+    uploadedAt: '2023-03-15',
+    order: 1
+  },
+  {
+    id: 'img2',
+    url: 'https://images.unsplash.com/photo-1540496905036-5937c10647cc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+    caption: 'Cardio zone',
+    uploadedAt: '2023-03-16',
+    order: 2
+  },
+  {
+    id: 'img3',
+    url: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+    caption: 'Group workout studio',
+    uploadedAt: '2023-03-17',
+    order: 3
+  }
+];
 
 // Sample data
 const sampleMembers: Member[] = [
@@ -143,6 +169,7 @@ export const MockDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [payments, setPayments] = useState<Payment[]>(samplePayments);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [whatsappNotifications, setWhatsappNotifications] = useState<WhatsAppNotification[]>([]);
+  const [gymGalleryImages, setGymGalleryImages] = useState<GymGalleryImage[]>(sampleGalleryImages);
 
   const login = async (email: string, password: string): Promise<User | null> => {
     // Simple mock authentication
@@ -326,6 +353,85 @@ export const MockDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   };
 
+  // Function to handle uploading a new gym image
+  const uploadGymImage = async (imageFile: File): Promise<GymGalleryImage> => {
+    // In a real app, we would upload the file to storage and get a URL
+    // Here we'll create a blob URL for demonstration
+    const imageUrl = URL.createObjectURL(imageFile);
+    
+    const newImage: GymGalleryImage = {
+      id: `img${Date.now()}`,
+      url: imageUrl,
+      caption: '',
+      uploadedAt: new Date().toISOString(),
+      order: gymGalleryImages.length + 1
+    };
+    
+    setGymGalleryImages(prev => [...prev, newImage]);
+    toast.success('Image uploaded successfully');
+    return newImage;
+  };
+  
+  // Function to delete an image
+  const deleteGymImage = async (imageId: string): Promise<boolean> => {
+    setGymGalleryImages(prev => {
+      const filtered = prev.filter(img => img.id !== imageId);
+      
+      // Reorder the remaining images
+      return filtered.map((img, index) => ({
+        ...img,
+        order: index + 1
+      }));
+    });
+    
+    toast.success('Image deleted successfully');
+    return true;
+  };
+  
+  // Function to update image order
+  const updateGymImageOrder = async (imageId: string, newOrder: number): Promise<GymGalleryImage> => {
+    let updatedImage: GymGalleryImage | undefined;
+    
+    setGymGalleryImages(prev => {
+      const currentImage = prev.find(img => img.id === imageId);
+      if (!currentImage) return prev;
+      
+      const currentOrder = currentImage.order;
+      
+      // Ensure newOrder is within bounds
+      const safeNewOrder = Math.max(1, Math.min(newOrder, prev.length));
+      
+      return prev.map(img => {
+        if (img.id === imageId) {
+          updatedImage = { ...img, order: safeNewOrder };
+          return updatedImage;
+        }
+        
+        // Adjust other images' orders based on move direction
+        if (currentOrder < safeNewOrder) {
+          // Moving down, decrease order for images between current and new position
+          if (img.order > currentOrder && img.order <= safeNewOrder) {
+            return { ...img, order: img.order - 1 };
+          }
+        } else if (currentOrder > safeNewOrder) {
+          // Moving up, increase order for images between new and current position
+          if (img.order >= safeNewOrder && img.order < currentOrder) {
+            return { ...img, order: img.order + 1 };
+          }
+        }
+        
+        return img;
+      }).sort((a, b) => a.order - b.order);
+    });
+    
+    if (!updatedImage) {
+      throw new Error('Image not found');
+    }
+    
+    toast.success('Image order updated');
+    return updatedImage;
+  };
+
   return (
     <MockDataContext.Provider value={{ 
       currentUser,
@@ -334,6 +440,7 @@ export const MockDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       attendance,
       payments,
       whatsappNotifications,
+      gymGalleryImages,
       login,
       logout,
       addMember,
@@ -342,7 +449,10 @@ export const MockDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       recordAttendance,
       recordPayment,
       sendWhatsAppNotification,
-      getDashboardStats
+      getDashboardStats,
+      uploadGymImage,
+      deleteGymImage,
+      updateGymImageOrder
     }}>
       {children}
     </MockDataContext.Provider>

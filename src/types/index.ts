@@ -76,6 +76,14 @@ export interface DashboardStats {
   newMembersThisMonth: number;
 }
 
+export interface GymGalleryImage {
+  id: string;
+  url: string;
+  caption?: string;
+  uploadedAt: string;
+  order: number;
+}
+
 export interface MockDataContext {
   currentUser: User | null;
   members: Member[];
@@ -83,6 +91,7 @@ export interface MockDataContext {
   attendance: AttendanceRecord[];
   payments: Payment[];
   whatsappNotifications: WhatsAppNotification[];
+  gymGalleryImages: GymGalleryImage[];
   login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
   addMember: (member: Omit<Member, 'id' | 'role'>) => Promise<Member>;
@@ -92,4 +101,7 @@ export interface MockDataContext {
   recordPayment: (payment: Omit<Payment, 'id'>) => Promise<Payment>;
   sendWhatsAppNotification: (memberId: string, message: string) => Promise<WhatsAppNotification>;
   getDashboardStats: () => DashboardStats;
+  uploadGymImage: (imageFile: File) => Promise<GymGalleryImage>;
+  deleteGymImage: (imageId: string) => Promise<boolean>;
+  updateGymImageOrder: (imageId: string, newOrder: number) => Promise<GymGalleryImage>;
 }
