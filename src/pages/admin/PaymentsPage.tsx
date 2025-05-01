@@ -14,8 +14,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { useMockData } from '@/context/MockDataContext';
 import { Member } from '@/types';
-import { PlusCircle, Search, IndianRupee } from 'lucide-react';
+import { PlusCircle, Search, IndianRupee, WhatsApp } from 'lucide-react';
 import RecordPaymentForm from '@/components/admin/RecordPaymentForm';
+import WhatsAppPaymentReminder from '@/components/admin/WhatsAppPaymentReminder';
 
 const PaymentsPage = () => {
   const { payments, members, recordPayment } = useMockData();
@@ -24,6 +25,9 @@ const PaymentsPage = () => {
   // State for payment dialog
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  
+  // State for WhatsApp reminder dialog
+  const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
   
   // Filter members based on search query
   const filteredMembers = members.filter(member => 
@@ -43,6 +47,11 @@ const PaymentsPage = () => {
   const handlePaymentClick = (member: Member) => {
     setSelectedMember(member);
     setIsPaymentDialogOpen(true);
+  };
+  
+  const handleReminderClick = (member: Member) => {
+    setSelectedMember(member);
+    setIsReminderDialogOpen(true);
   };
   
   const handleRecordPayment = async (paymentData: any) => {
@@ -169,15 +178,28 @@ const PaymentsPage = () => {
                         </TableCell>
                         <TableCell>{new Date(member.membershipEndDate).toLocaleDateString()}</TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handlePaymentClick(member)}
-                            className="h-8"
-                          >
-                            <IndianRupee className="h-4 w-4 mr-2" />
-                            Record Payment
-                          </Button>
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handlePaymentClick(member)}
+                              className="h-8"
+                            >
+                              <IndianRupee className="h-4 w-4 mr-2" />
+                              Record Payment
+                            </Button>
+                            
+                            {/* WhatsApp Reminder Button */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleReminderClick(member)}
+                              className="h-8 bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
+                            >
+                              <WhatsApp className="h-4 w-4 mr-2" />
+                              Remind
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -198,6 +220,21 @@ const PaymentsPage = () => {
               <RecordPaymentForm 
                 member={selectedMember} 
                 onSubmit={handleRecordPayment} 
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+        
+        {/* WhatsApp Reminder Dialog */}
+        <Dialog open={isReminderDialogOpen} onOpenChange={setIsReminderDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Send Payment Reminder</DialogTitle>
+            </DialogHeader>
+            {selectedMember && (
+              <WhatsAppPaymentReminder 
+                member={selectedMember} 
+                onClose={() => setIsReminderDialogOpen(false)}
               />
             )}
           </DialogContent>
