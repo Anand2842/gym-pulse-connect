@@ -1,10 +1,9 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { WhatsApp } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { Member } from '@/types';
 import { useMockData } from '@/context/MockDataContext';
 import { toast } from 'sonner';
@@ -16,10 +15,6 @@ interface WhatsAppPaymentReminderProps {
 
 const WhatsAppPaymentReminder: React.FC<WhatsAppPaymentReminderProps> = ({ member, onClose }) => {
   const { sendWhatsAppNotification } = useMockData();
-  const [message, setMessage] = useState(
-    `Hello ${member.name}, this is a friendly reminder that your membership payment of ₹${getMembershipAmount(member.membershipType)} is due. Please make the payment to continue enjoying our gym facilities. Thank you!`
-  );
-  const [sending, setSending] = useState(false);
 
   const getMembershipAmount = (membershipType: string): string => {
     switch (membershipType) {
@@ -33,6 +28,11 @@ const WhatsAppPaymentReminder: React.FC<WhatsAppPaymentReminderProps> = ({ membe
         return '0';
     }
   };
+  
+  const [message, setMessage] = useState(
+    `Hello ${member.name}, this is a friendly reminder that your membership payment of ₹${getMembershipAmount(member.membershipType)} is due. Please make the payment to continue enjoying our gym facilities. Thank you!`
+  );
+  const [sending, setSending] = useState(false);
 
   const handleSendReminder = async () => {
     if (!message.trim()) {
@@ -86,7 +86,7 @@ const WhatsAppPaymentReminder: React.FC<WhatsAppPaymentReminderProps> = ({ membe
             </span>
           ) : (
             <span className="flex items-center gap-2">
-              <WhatsApp size={16} />
+              <MessageSquare size={16} />
               Send Reminder
             </span>
           )}

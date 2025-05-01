@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { useMockData } from '@/context/MockDataContext';
 import { Member } from '@/types';
-import { PlusCircle, Search, IndianRupee, WhatsApp } from 'lucide-react';
+import { PlusCircle, Search, IndianRupee, MessageSquare } from 'lucide-react';
 import RecordPaymentForm from '@/components/admin/RecordPaymentForm';
 import WhatsAppPaymentReminder from '@/components/admin/WhatsAppPaymentReminder';
 
@@ -196,7 +196,7 @@ const PaymentsPage = () => {
                               onClick={() => handleReminderClick(member)}
                               className="h-8 bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
                             >
-                              <WhatsApp className="h-4 w-4 mr-2" />
+                              <MessageSquare className="h-4 w-4 mr-2" />
                               Remind
                             </Button>
                           </div>
