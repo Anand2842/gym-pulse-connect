@@ -1,16 +1,33 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useMockData } from '@/context/MockDataContext';
 import DashboardHeader from '@/components/admin/dashboard/DashboardHeader';
 import StatCardGrid from '@/components/admin/dashboard/StatCardGrid';
 import ChartSection from '@/components/admin/dashboard/ChartSection';
 import DistributionSection from '@/components/admin/dashboard/DistributionSection';
+import TenantSelector from '@/components/admin/TenantSelector';
+import { useTenant } from '@/context/TenantContext';
+import FeatureGuard from '@/components/common/FeatureGuard';
 
 const AdminDashboard = () => {
   const { getDashboardStats, members, payments } = useMockData();
+  const { currentTenant, setCurrentTenant } = useTenant();
   
   const stats = getDashboardStats();
+  
+  // Initialize with default tenant if none selected
+  useEffect(() => {
+    if (!currentTenant) {
+      setCurrentTenant({
+        id: 'gym-1',
+        name: 'Fitness First',
+        primaryColor: '#2C8EFF',
+        secondaryColor: '#4CAF50',
+        subscriptionTier: 'basic'
+      });
+    }
+  }, [currentTenant, setCurrentTenant]);
   
   // Generate attendance data for the chart (mock data)
   const attendanceData = [
@@ -46,6 +63,9 @@ const AdminDashboard = () => {
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
+        {/* Demo tenant selector */}
+        <TenantSelector />
+        
         <DashboardHeader />
         
         <StatCardGrid 
@@ -59,10 +79,12 @@ const AdminDashboard = () => {
           revenueData={revenueData} 
         />
         
-        <DistributionSection 
-          members={members} 
-          payments={payments} 
-        />
+        <FeatureGuard featureId="advanced-analytics">
+          <DistributionSection 
+            members={members} 
+            payments={payments} 
+          />
+        </FeatureGuard>
       </div>
     </MainLayout>
   );

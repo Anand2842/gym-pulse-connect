@@ -5,19 +5,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import WhatsAppSettings from '@/components/admin/WhatsAppSettings';
 import GalleryManager from '@/components/admin/gallery/GalleryManager';
+import SubscriptionSettings from '@/components/admin/settings/SubscriptionSettings';
+import { useTenant } from '@/context/TenantContext';
+import FeatureGuard from '@/components/common/FeatureGuard';
 
 const Settings: React.FC = () => {
+  const { isFeatureEnabled } = useTenant();
+  
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-6">Admin Settings</h1>
         
-        <Tabs defaultValue="notifications" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-4 mb-8">
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-5 mb-8">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="gallery">Gallery</TabsTrigger>
             <TabsTrigger value="integrations">Integrations</TabsTrigger>
+            <TabsTrigger value="subscription">Subscription</TabsTrigger>
           </TabsList>
           
           <TabsContent value="general" className="space-y-6">
@@ -37,11 +43,15 @@ const Settings: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="notifications" className="space-y-6">
-            <WhatsAppSettings />
+            <FeatureGuard featureId="whatsapp-notifications">
+              <WhatsAppSettings />
+            </FeatureGuard>
           </TabsContent>
           
           <TabsContent value="gallery" className="space-y-6">
-            <GalleryManager />
+            <FeatureGuard featureId="gallery-management">
+              <GalleryManager />
+            </FeatureGuard>
           </TabsContent>
           
           <TabsContent value="integrations" className="space-y-6">
@@ -58,6 +68,10 @@ const Settings: React.FC = () => {
                 </p>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="subscription" className="space-y-6">
+            <SubscriptionSettings />
           </TabsContent>
         </Tabs>
       </div>
