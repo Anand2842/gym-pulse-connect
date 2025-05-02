@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calculation } from 'lucide-react';
+import { Calculator } from 'lucide-react';
 
 const BMICalculator = () => {
   const [height, setHeight] = useState<string>('');
@@ -44,7 +44,7 @@ const BMICalculator = () => {
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
       <div className="flex items-center gap-2 mb-4">
-        <Calculation className="h-6 w-6 text-gym-primary" />
+        <Calculator className="h-6 w-6 text-gym-primary" />
         <h3 className="text-xl font-semibold">BMI Calculator</h3>
       </div>
       
