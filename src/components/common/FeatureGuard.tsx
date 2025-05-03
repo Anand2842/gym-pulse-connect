@@ -80,8 +80,8 @@ function getFeatureDisplayName(featureId: string | FeatureFlag): string {
   }
   
   // For enum values, convert ENUM_VALUE to "Enum Value"
-  return featureId
-    .toString()
+  const featureString = String(featureId); // Use String() instead of toString()
+  return featureString
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
@@ -98,7 +98,11 @@ function findLowestPlanWithFeature(featureId: string | FeatureFlag) {
       }
       
       // For string-based feature IDs (legacy support)
-      const mappedFeature = featureId.toString().replace(/-/g, '_').toUpperCase();
+      if (typeof featureId !== 'string') {
+        return plan.features[featureId];
+      }
+      
+      const mappedFeature = featureId.replace(/-/g, '_').toUpperCase();
       if (Object.values(FeatureFlag).includes(mappedFeature as FeatureFlag)) {
         return plan.features[mappedFeature as FeatureFlag];
       }
