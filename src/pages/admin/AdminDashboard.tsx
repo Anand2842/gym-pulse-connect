@@ -9,6 +9,7 @@ import DistributionSection from '@/components/admin/dashboard/DistributionSectio
 import TenantSelector from '@/components/admin/TenantSelector';
 import { useTenant } from '@/context/TenantContext';
 import FeatureGuard from '@/components/common/FeatureGuard';
+import { SubscriptionTier } from '@/types/subscription';
 
 const AdminDashboard = () => {
   const { getDashboardStats, members, payments } = useMockData();
@@ -24,7 +25,7 @@ const AdminDashboard = () => {
         name: 'Fitness First',
         primaryColor: '#2C8EFF',
         secondaryColor: '#4CAF50',
-        subscriptionTier: 'basic'
+        subscriptionTier: SubscriptionTier.BASIC
       });
     }
   }, [currentTenant, setCurrentTenant]);

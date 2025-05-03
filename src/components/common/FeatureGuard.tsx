@@ -79,8 +79,9 @@ function getFeatureDisplayName(featureId: string | FeatureFlag): string {
       .join(' ');
   }
   
-  // For enum values, convert to display text
+  // For enum values, convert ENUM_VALUE to "Enum Value"
   return featureId
+    .toString()
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
