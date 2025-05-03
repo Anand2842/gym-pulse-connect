@@ -6,6 +6,7 @@ import { Lock } from 'lucide-react';
 import { FeatureFlag } from '@/types/subscription';
 import { Button } from '@/components/ui/button';
 import { ArrowUpRight } from 'lucide-react';
+import { subscriptionPlans } from '@/config/subscriptionPlans';
 
 interface FeatureGuardProps {
   featureId: string | FeatureFlag;
@@ -89,8 +90,7 @@ function getFeatureDisplayName(featureId: string | FeatureFlag): string {
 
 // Helper function to find the lowest subscription plan that includes a feature
 function findLowestPlanWithFeature(featureId: string | FeatureFlag) {
-  const { subscriptionPlans } = require('@/config/subscriptionPlans');
-  
+  // Import subscription plans directly - no require statement
   return subscriptionPlans
     .filter(plan => {
       if (typeof featureId === 'string' && Object.values(FeatureFlag).includes(featureId as FeatureFlag)) {
