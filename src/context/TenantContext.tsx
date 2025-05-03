@@ -1,5 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { SubscriptionTier, FeatureFlag, SubscriptionPlan } from '../types/subscription';
+import { subscriptionPlans } from '../config/subscriptionPlans';
 
 export interface Tenant {
   id: string;
@@ -7,23 +8,18 @@ export interface Tenant {
   logoUrl?: string;
   primaryColor: string;
   secondaryColor: string;
-  subscriptionTier: 'basic' | 'standard' | 'premium';
+  subscriptionTier: SubscriptionTier;
   customDomain?: string;
-}
-
-export interface FeatureFlag {
-  id: string;
-  name: string;
-  description: string;
-  requiredTier: 'basic' | 'standard' | 'premium';
-  enabled: boolean;
+  customFeatures?: Partial<Record<FeatureFlag, boolean>>; // Override specific features
 }
 
 interface TenantContextType {
   currentTenant: Tenant | null;
   setCurrentTenant: (tenant: Tenant | null) => void;
-  isFeatureEnabled: (featureId: string) => boolean;
-  features: FeatureFlag[];
+  isFeatureEnabled: (featureId: string | FeatureFlag) => boolean;
+  getSubscriptionPlan: () => SubscriptionPlan | null;
+  updateSubscription: (tier: SubscriptionTier) => void;
+  features: {id: string, name: string, enabled: boolean}[];
   customizeTheme: (primaryColor: string, secondaryColor: string) => void;
 }
 
@@ -31,61 +27,65 @@ const defaultTenantContext: TenantContextType = {
   currentTenant: null,
   setCurrentTenant: () => {},
   isFeatureEnabled: () => false,
+  getSubscriptionPlan: () => null,
+  updateSubscription: () => {},
   features: [],
   customizeTheme: () => {}
 };
 
 const TenantContext = createContext<TenantContextType>(defaultTenantContext);
 
-// List of features and their required subscription tiers
-const featureDefinitions: Omit<FeatureFlag, 'enabled'>[] = [
+// Feature definitions for UI display
+const featureDefinitions = [
   {
-    id: 'member-management',
+    id: FeatureFlag.MEMBER_MANAGEMENT,
     name: 'Member Management',
-    description: 'Add, edit, and manage gym members',
-    requiredTier: 'basic'
+    description: 'Add, edit, and manage gym members'
   },
   {
-    id: 'payment-tracking',
+    id: FeatureFlag.PAYMENT_TRACKING,
     name: 'Payment Tracking',
-    description: 'Record and track member payments',
-    requiredTier: 'basic'
+    description: 'Record and track member payments'
   },
   {
-    id: 'attendance',
+    id: FeatureFlag.ATTENDANCE_TRACKING,
     name: 'Attendance Tracking',
-    description: 'Track member check-ins and attendance',
-    requiredTier: 'basic'
+    description: 'Track member check-ins and attendance'
   },
   {
-    id: 'basic-analytics',
-    name: 'Basic Analytics',
-    description: 'View simple reports and charts',
-    requiredTier: 'basic'
+    id: FeatureFlag.REPORTS_BASIC,
+    name: 'Basic Reports',
+    description: 'View simple reports and charts'
   },
   {
-    id: 'whatsapp-notifications',
-    name: 'WhatsApp Notifications',
-    description: 'Send payment reminders via WhatsApp',
-    requiredTier: 'standard'
-  },
-  {
-    id: 'advanced-analytics',
+    id: FeatureFlag.REPORTS_ADVANCED,
     name: 'Advanced Analytics',
-    description: 'Access detailed analytics and forecasting',
-    requiredTier: 'premium'
+    description: 'Access detailed analytics and forecasting'
   },
   {
-    id: 'custom-branding',
+    id: FeatureFlag.STAFF_MANAGEMENT,
+    name: 'Staff Management',
+    description: 'Manage gym staff and trainers'
+  },
+  {
+    id: FeatureFlag.WHATSAPP_INTEGRATION,
+    name: 'WhatsApp Notifications',
+    description: 'Send payment reminders via WhatsApp'
+  },
+  {
+    id: FeatureFlag.EMAIL_NOTIFICATIONS,
+    name: 'Email Notifications',
+    description: 'Send automated email notifications'
+  },
+  {
+    id: FeatureFlag.CUSTOM_BRANDING,
     name: 'Custom Branding',
-    description: 'Customize colors and logo',
-    requiredTier: 'standard'
+    description: 'Customize colors and logo'
   },
   {
-    id: 'gallery-management',
-    name: 'Gallery Management',
-    description: 'Manage gym photos and media',
-    requiredTier: 'standard'
+    id: FeatureFlag.API_ACCESS,
+    name: 'API Access',
+    description: 'Connect with external systems'
   }
 ];
 
@@ -95,51 +95,101 @@ interface TenantProviderProps {
 
 export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
-  const [features, setFeatures] = useState<FeatureFlag[]>([]);
+  const [features, setFeatures] = useState<{id: string, name: string, enabled: boolean}[]>([]);
   
-  // Initialize features when tenant changes
+  // Initialize default tenant or fetch from storage/API
+  useEffect(() => {
+    const defaultTenant: Tenant = {
+      id: 'gym-1',
+      name: 'Fitness First',
+      primaryColor: '#2C8EFF',
+      secondaryColor: '#4CAF50',
+      subscriptionTier: SubscriptionTier.BASIC,
+      logoUrl: '/logo-fitness-first.png'
+    };
+    
+    setCurrentTenant(defaultTenant);
+  }, []);
+
+  // Update features whenever tenant changes
   useEffect(() => {
     if (currentTenant) {
-      const enabledFeatures = featureDefinitions.map(feature => ({
-        ...feature,
-        enabled: isFeatureAvailableForTier(feature.requiredTier, currentTenant.subscriptionTier)
-      }));
-      
-      setFeatures(enabledFeatures);
+      updateFeaturesBasedOnSubscription();
       
       // Apply tenant's theme
-      if (currentTenant.primaryColor) {
-        document.documentElement.style.setProperty('--gym-primary', currentTenant.primaryColor);
-      }
-      if (currentTenant.secondaryColor) {
-        document.documentElement.style.setProperty('--gym-secondary', currentTenant.secondaryColor);
-      }
+      document.documentElement.style.setProperty('--gym-primary', currentTenant.primaryColor);
+      document.documentElement.style.setProperty('--gym-secondary', currentTenant.secondaryColor);
     }
   }, [currentTenant]);
   
-  // Check if a feature is enabled for current tenant
-  const isFeatureEnabled = (featureId: string): boolean => {
+  const updateFeaturesBasedOnSubscription = () => {
+    if (!currentTenant) return;
+    
+    const plan = getSubscriptionPlan();
+    if (!plan) return;
+    
+    const enabledFeatures = featureDefinitions.map(feature => {
+      // First check if there's a custom override for this feature
+      if (currentTenant.customFeatures && feature.id in currentTenant.customFeatures) {
+        return {
+          ...feature,
+          enabled: !!currentTenant.customFeatures[feature.id as FeatureFlag]
+        };
+      }
+      
+      // Otherwise use the subscription plan definition
+      return {
+        ...feature,
+        enabled: plan.features[feature.id as FeatureFlag] || false
+      };
+    });
+    
+    setFeatures(enabledFeatures);
+  };
+  
+  const getSubscriptionPlan = (): SubscriptionPlan | null => {
+    if (!currentTenant) return null;
+    
+    return subscriptionPlans.find(plan => plan.tier === currentTenant.subscriptionTier) || null;
+  };
+
+  const isFeatureEnabled = (featureId: string | FeatureFlag): boolean => {
     if (!currentTenant) return false;
     
-    const feature = features.find(f => f.id === featureId);
-    return feature ? feature.enabled : false;
-  };
-  
-  // Helper function to check if a feature tier is available for subscription tier
-  const isFeatureAvailableForTier = (featureTier: string, subscriptionTier: string): boolean => {
-    const tierLevels = {
-      'basic': 0,
-      'standard': 1,
-      'premium': 2
-    };
+    // First check if there's a custom override for this feature
+    if (currentTenant.customFeatures && featureId in currentTenant.customFeatures) {
+      return !!currentTenant.customFeatures[featureId as FeatureFlag];
+    }
     
-    return tierLevels[subscriptionTier as keyof typeof tierLevels] >= 
-           tierLevels[featureTier as keyof typeof tierLevels];
+    // Otherwise check the subscription plan
+    const plan = getSubscriptionPlan();
+    if (!plan) return false;
+    
+    if (Object.values(FeatureFlag).includes(featureId as FeatureFlag)) {
+      return !!plan.features[featureId as FeatureFlag];
+    }
+    
+    // Legacy string-based feature ID compatibility
+    const feature = featureDefinitions.find(f => f.id === featureId);
+    return feature ? isFeatureEnabled(feature.id as FeatureFlag) : false;
   };
   
-  // Allow customization of theme colors
+  const updateSubscription = (tier: SubscriptionTier) => {
+    if (!currentTenant) return;
+    
+    // In a real app, this would involve payment processing and API calls
+    setCurrentTenant({
+      ...currentTenant,
+      subscriptionTier: tier
+    });
+    
+    // Show toast or notification
+    console.log(`Subscription updated to ${tier} for ${currentTenant.name}`);
+  };
+  
+  // Allow customization of theme colors (premium feature)
   const customizeTheme = (primaryColor: string, secondaryColor: string) => {
-    if (currentTenant && isFeatureEnabled('custom-branding')) {
+    if (currentTenant && isFeatureEnabled(FeatureFlag.CUSTOM_BRANDING)) {
       document.documentElement.style.setProperty('--gym-primary', primaryColor);
       document.documentElement.style.setProperty('--gym-secondary', secondaryColor);
       
@@ -156,6 +206,8 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
       currentTenant,
       setCurrentTenant,
       isFeatureEnabled,
+      getSubscriptionPlan,
+      updateSubscription,
       features,
       customizeTheme
     }}>

@@ -11,34 +11,46 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/context/TenantContext';
 import { Check, X } from 'lucide-react';
+import { subscriptionPlans } from '@/config/subscriptionPlans';
+import { SubscriptionTier, FeatureFlag } from '@/types/subscription';
+import { toast } from '@/components/ui/use-toast';
 
 const SubscriptionSettings = () => {
-  const { currentTenant, features } = useTenant();
+  const { currentTenant, getSubscriptionPlan, updateSubscription, features } = useTenant();
   
   if (!currentTenant) {
     return null;
   }
+
+  const currentPlan = getSubscriptionPlan();
   
-  const subscriptionTiers = [
-    { 
-      name: 'Basic', 
-      price: '₹999/month',
-      value: 'basic', 
-      description: 'Essential features for small gyms' 
-    },
-    { 
-      name: 'Standard', 
-      price: '₹1,999/month',
-      value: 'standard', 
-      description: 'Complete solution for growing facilities' 
-    },
-    { 
-      name: 'Premium', 
-      price: '₹3,999/month',
-      value: 'premium', 
-      description: 'Advanced tools for established businesses' 
-    },
-  ];
+  const handleSubscriptionChange = (tier: SubscriptionTier) => {
+    if (!currentTenant) return;
+    
+    // Don't do anything if selecting current tier
+    if (tier === currentTenant.subscriptionTier) {
+      return;
+    }
+    
+    // Simulate subscription change
+    updateSubscription(tier);
+    
+    // Show success message
+    toast({
+      title: "Subscription updated",
+      description: `Your subscription has been changed to ${getTierDisplayName(tier)}`,
+    });
+  };
+  
+  // Helper to get display name for subscription tiers
+  const getTierDisplayName = (tier: SubscriptionTier) => {
+    return tier.charAt(0).toUpperCase() + tier.slice(1);
+  };
+  
+  // Helper to format price with currency
+  const formatPrice = (price: number) => {
+    return `₹${price}`;
+  };
   
   return (
     <Card>
@@ -51,75 +63,71 @@ const SubscriptionSettings = () => {
       <CardContent className="space-y-6">
         <div className="bg-blue-50 p-4 rounded-md">
           <p className="font-medium">Current Plan: {
-            subscriptionTiers.find(tier => tier.value === currentTenant.subscriptionTier)?.name
+            currentPlan ? getTierDisplayName(currentPlan.tier) : '-'
           }</p>
           <p className="text-sm text-blue-600 mt-1">
-            {subscriptionTiers.find(tier => tier.value === currentTenant.subscriptionTier)?.price}
+            {currentPlan ? formatPrice(currentPlan.price) + '/month' : '-'}
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {subscriptionTiers.map((tier) => (
-            <Card key={tier.value} className={`border ${currentTenant.subscriptionTier === tier.value ? 'border-blue-500 ring-2 ring-blue-200' : ''}`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {subscriptionPlans.map((plan) => (
+            <Card key={plan.tier} className={`border ${currentTenant.subscriptionTier === plan.tier ? 'border-blue-500 ring-2 ring-blue-200' : ''}`}>
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-center">
-                  <CardTitle className="text-lg">{tier.name}</CardTitle>
-                  {currentTenant.subscriptionTier === tier.value && (
+                  <CardTitle className="text-lg">{plan.name}</CardTitle>
+                  {currentTenant.subscriptionTier === plan.tier && (
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                       Current
                     </Badge>
                   )}
                 </div>
-                <CardDescription>{tier.description}</CardDescription>
-                <p className="text-lg font-bold mt-1">{tier.price}</p>
+                <CardDescription>{plan.description}</CardDescription>
+                <p className="text-lg font-bold mt-1">{formatPrice(plan.price)}<span className="text-sm font-normal">/month</span></p>
               </CardHeader>
               <CardContent className="space-y-2">
-                <ul className="space-y-2">
-                  {features
-                    .filter(feature => 
-                      tier.value === 'premium' || 
-                      (tier.value === 'standard' && feature.requiredTier !== 'premium') ||
-                      (tier.value === 'basic' && feature.requiredTier === 'basic')
-                    )
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {Object.entries(plan.features)
+                    .map(([featureId, isEnabled]) => {
+                      // Find the feature display name
+                      const feature = features.find(f => f.id === featureId);
+                      return { 
+                        id: featureId, 
+                        name: feature?.name || featureId.replace(/_/g, ' '), 
+                        enabled: isEnabled 
+                      };
+                    })
+                    .sort((a, b) => Number(b.enabled) - Number(a.enabled)) // Enabled features first
                     .map(feature => (
-                      <li key={feature.id} className="flex items-center text-sm">
-                        <Check className="h-4 w-4 text-green-500 mr-2" />
-                        {feature.name}
-                      </li>
+                      <div key={feature.id} className="flex items-center text-sm">
+                        {feature.enabled ? (
+                          <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                        ) : (
+                          <X className="h-4 w-4 text-gray-300 mr-2 flex-shrink-0" />
+                        )}
+                        <span className={feature.enabled ? '' : 'text-gray-400'}>
+                          {feature.name}
+                        </span>
+                      </div>
                     ))
                   }
-                  
-                  {features
-                    .filter(feature => 
-                      (tier.value === 'basic' && feature.requiredTier !== 'basic') ||
-                      (tier.value === 'standard' && feature.requiredTier === 'premium')
-                    )
-                    .map(feature => (
-                      <li key={feature.id} className="flex items-center text-sm text-gray-400">
-                        <X className="h-4 w-4 text-gray-300 mr-2" />
-                        {feature.name}
-                      </li>
-                    ))
-                  }
-                </ul>
+                </div>
                 
-                {currentTenant.subscriptionTier !== tier.value && (
-                  <Button 
-                    className="w-full mt-4"
-                    variant={
-                      subscriptionTiers.findIndex(t => t.value === tier.value) >
-                      subscriptionTiers.findIndex(t => t.value === currentTenant.subscriptionTier)
-                        ? "default"
-                        : "outline"
-                    }
-                  >
-                    {subscriptionTiers.findIndex(t => t.value === tier.value) >
-                      subscriptionTiers.findIndex(t => t.value === currentTenant.subscriptionTier)
-                        ? "Upgrade"
-                        : "Downgrade"
-                    }
-                  </Button>
-                )}
+                <Button 
+                  className="w-full mt-4"
+                  variant={
+                    currentTenant.subscriptionTier === plan.tier
+                      ? "outline"
+                      : "default"
+                  }
+                  disabled={currentTenant.subscriptionTier === plan.tier}
+                  onClick={() => handleSubscriptionChange(plan.tier)}
+                >
+                  {currentTenant.subscriptionTier === plan.tier
+                    ? "Current Plan"
+                    : "Select Plan"
+                  }
+                </Button>
               </CardContent>
             </Card>
           ))}
