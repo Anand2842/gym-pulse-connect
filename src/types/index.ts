@@ -38,7 +38,8 @@ export interface Payment {
   memberId: string;
   amount: number;
   date: string;
-  paymentMethod: 'cash' | 'online' | 'card';
+  paymentMethod: 'cash' | 'online' | 'card' | 'upi';
+  upiReference?: string;
   membershipType: 'monthly' | 'quarterly' | 'yearly';
   validUntil: string;
   status: 'completed' | 'pending' | 'failed';

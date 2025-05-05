@@ -19,7 +19,8 @@ interface RecordPaymentFormProps {
 
 const RecordPaymentForm: React.FC<RecordPaymentFormProps> = ({ member, onSubmit }) => {
   const [amount, setAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online' | 'card'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online' | 'card' | 'upi'>('cash');
+  const [upiReference, setUpiReference] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   
   // Calculate membership end date based on current date and membership type
@@ -54,11 +55,17 @@ const RecordPaymentForm: React.FC<RecordPaymentFormProps> = ({ member, onSubmit 
       status: 'completed'
     };
     
+    // Add UPI reference if payment method is UPI
+    if (paymentMethod === 'upi' && upiReference) {
+      paymentData.upiReference = upiReference;
+    }
+    
     onSubmit(paymentData);
     
     // Reset form
     setAmount('');
     setPaymentMethod('cash');
+    setUpiReference('');
     setDate(new Date().toISOString().split('T')[0]);
   };
 
@@ -101,7 +108,7 @@ const RecordPaymentForm: React.FC<RecordPaymentFormProps> = ({ member, onSubmit 
         <Label htmlFor="paymentMethod">Payment Method</Label>
         <Select 
           value={paymentMethod} 
-          onValueChange={(value: 'cash' | 'online' | 'card') => setPaymentMethod(value)}
+          onValueChange={(value: 'cash' | 'online' | 'card' | 'upi') => setPaymentMethod(value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select payment method" />
@@ -110,9 +117,27 @@ const RecordPaymentForm: React.FC<RecordPaymentFormProps> = ({ member, onSubmit 
             <SelectItem value="cash">Cash</SelectItem>
             <SelectItem value="online">Online Transfer</SelectItem>
             <SelectItem value="card">Card</SelectItem>
+            <SelectItem value="upi">UPI</SelectItem>
           </SelectContent>
         </Select>
       </div>
+      
+      {/* UPI Reference field - only shown when UPI is selected */}
+      {paymentMethod === 'upi' && (
+        <div className="space-y-2">
+          <Label htmlFor="upiReference">UPI Reference/Transaction ID</Label>
+          <Input
+            id="upiReference"
+            type="text"
+            placeholder="Enter UPI transaction reference"
+            value={upiReference}
+            onChange={(e) => setUpiReference(e.target.value)}
+          />
+          <p className="text-xs text-gray-500">
+            Optional: You can enter the UPI transaction ID for your records
+          </p>
+        </div>
+      )}
       
       <div className="space-y-2">
         <Label htmlFor="date">Payment Date</Label>

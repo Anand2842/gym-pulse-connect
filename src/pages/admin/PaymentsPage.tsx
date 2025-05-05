@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { 
@@ -14,11 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { useMockData } from '@/context/MockDataContext';
 import { Member } from '@/types';
-import { PlusCircle, Search, IndianRupee, MessageSquare } from 'lucide-react';
+import { PlusCircle, Search, IndianRupee, MessageSquare, CreditCard } from 'lucide-react';
 import RecordPaymentForm from '@/components/admin/RecordPaymentForm';
 import WhatsAppPaymentReminder from '@/components/admin/WhatsAppPaymentReminder';
 
 const PaymentsPage = () => {
+  
   const { payments, members, recordPayment } = useMockData();
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -59,10 +59,35 @@ const PaymentsPage = () => {
     setIsPaymentDialogOpen(false);
     setSelectedMember(null);
   };
+  
+  // Helper function to render payment method with appropriate styling
+  const renderPaymentMethod = (method: string) => {
+    switch (method) {
+      case 'upi':
+        return (
+          <span className="inline-flex items-center text-green-700">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            UPI
+          </span>
+        );
+      case 'card':
+        return (
+          <span className="inline-flex items-center text-blue-700">
+            <CreditCard className="h-4 w-4 mr-1" />
+            Card
+          </span>
+        );
+      default:
+        return <span className="capitalize">{method}</span>;
+    }
+  };
 
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
+        
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Payments</h1>
@@ -114,7 +139,7 @@ const PaymentsPage = () => {
                           </TableCell>
                           <TableCell className="font-medium">{member?.name || 'Unknown'}</TableCell>
                           <TableCell className="capitalize">{payment.membershipType}</TableCell>
-                          <TableCell className="capitalize">{payment.paymentMethod}</TableCell>
+                          <TableCell>{renderPaymentMethod(payment.paymentMethod)}</TableCell>
                           <TableCell className="text-right font-semibold">₹{payment.amount}</TableCell>
                         </TableRow>
                       );
