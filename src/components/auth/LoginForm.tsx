@@ -56,7 +56,7 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-md">
+    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-md transition-shadow hover:shadow-lg">
       <div className="text-center mb-6">
         <div className="h-12 w-12 rounded-md bg-gradient-to-r from-gym-primary to-gym-secondary flex items-center justify-center text-white font-bold mx-auto mb-2">
           GP
@@ -75,6 +75,7 @@ const LoginForm = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="transition-colors focus:border-gym-primary"
           />
         </div>
         <div className="space-y-2">
@@ -86,12 +87,13 @@ const LoginForm = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            className="transition-colors focus:border-gym-primary"
           />
         </div>
         
         <Button
           type="submit"
-          className="w-full bg-gym-primary hover:bg-blue-600"
+          className="w-full bg-gym-primary hover:bg-blue-600 transition-all hover:shadow-md"
           disabled={isLoading}
         >
           {isLoading ? 'Signing in...' : 'Sign In'}
@@ -113,7 +115,7 @@ const LoginForm = () => {
             type="button" 
             variant="outline"
             onClick={() => handleQuickLogin('admin@example.com')}
-            className="text-sm"
+            className="text-sm transition-colors hover:bg-gym-primary/10"
           >
             Demo as Admin
           </Button>
@@ -121,7 +123,7 @@ const LoginForm = () => {
             type="button" 
             variant="outline"
             onClick={() => handleQuickLogin('raj@example.com')}
-            className="text-sm"
+            className="text-sm transition-colors hover:bg-gym-primary/10"
           >
             Demo as Member
           </Button>
