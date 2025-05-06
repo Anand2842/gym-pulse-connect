@@ -4,18 +4,18 @@ import { supabase } from '@/integrations/supabase/client';
 // This function will be used to create demo users in development
 export const createDemoUsers = async () => {
   try {
-    // Check if demo admin exists
-    const { data: adminExistsData, error: adminCheckError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', 'admin@example.com')
-      .limit(1);
+    // Check if demo admin exists using auth API instead of profiles table
+    const { data: adminUsers, error: adminListError } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 10
+    });
     
-    const adminExists = adminExistsData && adminExistsData.length > 0;
-    
-    if (adminCheckError) {
-      console.error('Error checking for admin:', adminCheckError);
+    if (adminListError) {
+      console.error('Error listing users for admin check:', adminListError);
+      return;
     }
+    
+    const adminExists = adminUsers?.users.some(user => user.email === 'admin@example.com');
     
     // Create admin demo user if not exists
     if (!adminExists) {
@@ -34,7 +34,10 @@ export const createDemoUsers = async () => {
       
       if (adminAuthError) {
         console.error('Error creating admin demo user:', adminAuthError);
-      } else if (adminAuthData.user) {
+        return;
+      } 
+      
+      if (adminAuthData.user) {
         // Update profile directly
         const { error: profileError } = await supabase
           .from('profiles')
@@ -57,8 +60,7 @@ export const createDemoUsers = async () => {
             address: '123 Fitness Street, Demo City',
             owner_id: adminAuthData.user.id
           })
-          .select()
-          .limit(1);
+          .select();
         
         if (gymError) {
           console.error('Error creating demo gym:', gymError);
@@ -66,18 +68,18 @@ export const createDemoUsers = async () => {
       }
     }
     
-    // Check if demo member exists
-    const { data: memberExistsData, error: memberCheckError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', 'member@example.com')
-      .limit(1);
+    // Check if demo member exists using auth API instead of profiles table
+    const { data: memberUsers, error: memberListError } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 20
+    });
     
-    const memberExists = memberExistsData && memberExistsData.length > 0;
-    
-    if (memberCheckError) {
-      console.error('Error checking for member:', memberCheckError);
+    if (memberListError) {
+      console.error('Error listing users for member check:', memberListError);
+      return;
     }
+    
+    const memberExists = memberUsers?.users.some(user => user.email === 'member@example.com');
     
     // Create member demo user if not exists
     if (!memberExists) {
@@ -96,7 +98,10 @@ export const createDemoUsers = async () => {
       
       if (memberAuthError) {
         console.error('Error creating member demo user:', memberAuthError);
-      } else if (memberAuthData.user) {
+        return;
+      }
+      
+      if (memberAuthData.user) {
         // Update profile directly
         const { error: profileError } = await supabase
           .from('profiles')
@@ -112,22 +117,21 @@ export const createDemoUsers = async () => {
         }
         
         // Find the gym to add the member to
-        const { data: gym, error: gymFetchError } = await supabase
+        const { data: gyms, error: gymFetchError } = await supabase
           .from('gyms')
           .select('id')
-          .eq('name', 'Demo Fitness Center')
-          .limit(1);
+          .eq('name', 'Demo Fitness Center');
         
         if (gymFetchError) {
           console.error('Error fetching gym:', gymFetchError);
         }
         
-        if (gym && gym.length > 0) {
+        if (gyms && gyms.length > 0) {
           // Add as member to the gym
           const { error: memberError } = await supabase
             .from('members')
             .insert({
-              gym_id: gym[0].id,
+              gym_id: gyms[0].id,
               profile_id: memberAuthData.user.id,
               join_date: new Date().toISOString().split('T')[0],
               active: true
