@@ -9,7 +9,7 @@ export const createDemoUsers = async () => {
       .from('profiles')
       .select('id')
       .eq('email', 'admin@example.com')
-      .maybeSingle();
+      .single();
     
     // Create admin demo user if not exists
     if (!adminExists) {
@@ -65,7 +65,7 @@ export const createDemoUsers = async () => {
       .from('profiles')
       .select('id')
       .eq('email', 'member@example.com')
-      .maybeSingle();
+      .single();
     
     // Create member demo user if not exists
     if (!memberExists) {
