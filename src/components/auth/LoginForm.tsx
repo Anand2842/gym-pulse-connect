@@ -1,33 +1,42 @@
 
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { useMockData } from '@/context/MockDataContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/context/AuthContext';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useMockData();
+  const [error, setError] = useState<string | null>(null);
+  
+  const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setIsLoading(true);
 
     try {
-      const user = await login(email, password);
-      if (user) {
-        if (user.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/member/dashboard');
-        }
+      const { error, data } = await signIn(email, password);
+      
+      if (error) {
+        setError(error.message);
+        return;
       }
-    } catch (error) {
-      console.error('Login error:', error);
+      
+      // Check if user is an admin (this will be improved with proper role system)
+      // For now, we're using demo accounts as specified in the UI
+      if (email.includes('admin')) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/member/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in');
     } finally {
       setIsLoading(false);
     }
@@ -36,20 +45,24 @@ const LoginForm = () => {
   // For demo purposes - Quick login buttons
   const handleQuickLogin = async (demoEmail: string) => {
     setEmail(demoEmail);
-    setPassword('password'); // Not actually used in the mock auth
+    setPassword('password'); // Default password for demo accounts
     
     setIsLoading(true);
     try {
-      const user = await login(demoEmail, 'password');
-      if (user) {
-        if (user.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/member/dashboard');
-        }
+      const { error } = await signIn(demoEmail, 'password');
+      
+      if (error) {
+        setError(error.message);
+        return;
       }
-    } catch (error) {
-      console.error('Login error:', error);
+      
+      if (demoEmail.includes('admin')) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/member/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in');
     } finally {
       setIsLoading(false);
     }
@@ -64,6 +77,12 @@ const LoginForm = () => {
         <h2 className="text-2xl font-bold text-gray-900">Welcome to GymPulse</h2>
         <p className="text-gray-600 mt-1">Sign in to your account</p>
       </div>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleLogin} className="space-y-4">
         <div className="space-y-2">
@@ -89,6 +108,14 @@ const LoginForm = () => {
             required
             className="transition-colors focus:border-gym-primary"
           />
+          <div className="flex justify-end">
+            <Link
+              to="/reset-password"
+              className="text-xs text-gym-primary hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
         
         <Button
@@ -98,6 +125,15 @@ const LoginForm = () => {
         >
           {isLoading ? 'Signing in...' : 'Sign In'}
         </Button>
+        
+        <div className="text-center mt-2">
+          <p className="text-sm text-gray-600">
+            Don't have an account?{" "}
+            <Link to="/signup" className="text-gym-primary hover:underline">
+              Sign up
+            </Link>
+          </p>
+        </div>
       </form>
 
       <div className="mt-6">
@@ -122,7 +158,7 @@ const LoginForm = () => {
           <Button 
             type="button" 
             variant="outline"
-            onClick={() => handleQuickLogin('raj@example.com')}
+            onClick={() => handleQuickLogin('member@example.com')}
             className="text-sm transition-colors hover:bg-gym-primary/10"
           >
             Demo as Member
