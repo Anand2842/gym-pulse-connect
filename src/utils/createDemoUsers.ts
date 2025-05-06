@@ -5,11 +5,17 @@ import { supabase } from '@/integrations/supabase/client';
 export const createDemoUsers = async () => {
   try {
     // Check if demo admin exists
-    const { data: adminExists } = await supabase
+    const { data: adminExistsData, error: adminCheckError } = await supabase
       .from('profiles')
       .select('id')
       .eq('email', 'admin@example.com')
-      .single();
+      .limit(1);
+    
+    const adminExists = adminExistsData && adminExistsData.length > 0;
+    
+    if (adminCheckError) {
+      console.error('Error checking for admin:', adminCheckError);
+    }
     
     // Create admin demo user if not exists
     if (!adminExists) {
@@ -52,7 +58,7 @@ export const createDemoUsers = async () => {
             owner_id: adminAuthData.user.id
           })
           .select()
-          .single();
+          .limit(1);
         
         if (gymError) {
           console.error('Error creating demo gym:', gymError);
@@ -61,11 +67,17 @@ export const createDemoUsers = async () => {
     }
     
     // Check if demo member exists
-    const { data: memberExists } = await supabase
+    const { data: memberExistsData, error: memberCheckError } = await supabase
       .from('profiles')
       .select('id')
       .eq('email', 'member@example.com')
-      .single();
+      .limit(1);
+    
+    const memberExists = memberExistsData && memberExistsData.length > 0;
+    
+    if (memberCheckError) {
+      console.error('Error checking for member:', memberCheckError);
+    }
     
     // Create member demo user if not exists
     if (!memberExists) {
@@ -100,18 +112,22 @@ export const createDemoUsers = async () => {
         }
         
         // Find the gym to add the member to
-        const { data: gym } = await supabase
+        const { data: gym, error: gymFetchError } = await supabase
           .from('gyms')
           .select('id')
           .eq('name', 'Demo Fitness Center')
-          .single();
+          .limit(1);
         
-        if (gym) {
+        if (gymFetchError) {
+          console.error('Error fetching gym:', gymFetchError);
+        }
+        
+        if (gym && gym.length > 0) {
           // Add as member to the gym
           const { error: memberError } = await supabase
             .from('members')
             .insert({
-              gym_id: gym.id,
+              gym_id: gym[0].id,
               profile_id: memberAuthData.user.id,
               join_date: new Date().toISOString().split('T')[0],
               active: true
