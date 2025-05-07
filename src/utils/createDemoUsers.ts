@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
 
 // This function will be used to create demo users in development
 export const createDemoUsers = async () => {
