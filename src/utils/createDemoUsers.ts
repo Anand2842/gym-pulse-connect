@@ -2,6 +2,19 @@
 import { supabase } from '@/integrations/supabase/client';
 import { AuthUser } from '@supabase/supabase-js';
 
+// Define the type for users returned by the admin.listUsers API
+type AdminListUsersResponse = {
+  users: {
+    id: string;
+    email?: string;
+    phone?: string;
+    created_at: string;
+    updated_at?: string;
+    [key: string]: any;
+  }[];
+  total_count: number;
+};
+
 // This function will be used to create demo users in development
 export const createDemoUsers = async () => {
   try {
@@ -16,8 +29,9 @@ export const createDemoUsers = async () => {
       return;
     }
     
-    // Use specific type checking to ensure TypeScript understands the structure
-    const adminExists = adminUsersData?.users && adminUsersData.users.some(user => 
+    // Cast the response to the correct type and check if admin exists
+    const adminData = adminUsersData as unknown as AdminListUsersResponse;
+    const adminExists = adminData?.users && adminData.users.some(user => 
       user.email === 'admin@example.com'
     );
     
@@ -83,8 +97,9 @@ export const createDemoUsers = async () => {
       return;
     }
     
-    // Use specific type checking to ensure TypeScript understands the structure
-    const memberExists = memberUsersData?.users && memberUsersData.users.some(user => 
+    // Cast the response to the correct type and check if member exists
+    const memberData = memberUsersData as unknown as AdminListUsersResponse;
+    const memberExists = memberData?.users && memberData.users.some(user => 
       user.email === 'member@example.com'
     );
     
