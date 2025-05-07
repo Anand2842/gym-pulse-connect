@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 // This function will be used to create demo users in development
 export const createDemoUsers = async () => {
@@ -149,7 +150,3 @@ export const createDemoUsers = async () => {
     console.error('Error in createDemoUsers:', error);
   }
 };
-
-// Use this function to create demo users in development
-// You can call this from a component or from a specific page
-// For example, you might want to add a button in the settings page for admins
