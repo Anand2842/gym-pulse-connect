@@ -1,11 +1,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { AuthUser } from '@supabase/supabase-js';
 
 // This function will be used to create demo users in development
 export const createDemoUsers = async () => {
   try {
     // Check if demo admin exists using auth API instead of profiles table
-    const { data: adminUsers, error: adminListError } = await supabase.auth.admin.listUsers({
+    const { data: adminUsersData, error: adminListError } = await supabase.auth.admin.listUsers({
       page: 1,
       perPage: 10
     });
@@ -15,7 +16,10 @@ export const createDemoUsers = async () => {
       return;
     }
     
-    const adminExists = adminUsers?.users.some(user => user.email === 'admin@example.com');
+    // Use specific type checking to ensure TypeScript understands the structure
+    const adminExists = adminUsersData?.users && adminUsersData.users.some(user => 
+      user.email === 'admin@example.com'
+    );
     
     // Create admin demo user if not exists
     if (!adminExists) {
@@ -69,7 +73,7 @@ export const createDemoUsers = async () => {
     }
     
     // Check if demo member exists using auth API instead of profiles table
-    const { data: memberUsers, error: memberListError } = await supabase.auth.admin.listUsers({
+    const { data: memberUsersData, error: memberListError } = await supabase.auth.admin.listUsers({
       page: 1,
       perPage: 20
     });
@@ -79,7 +83,10 @@ export const createDemoUsers = async () => {
       return;
     }
     
-    const memberExists = memberUsers?.users.some(user => user.email === 'member@example.com');
+    // Use specific type checking to ensure TypeScript understands the structure
+    const memberExists = memberUsersData?.users && memberUsersData.users.some(user => 
+      user.email === 'member@example.com'
+    );
     
     // Create member demo user if not exists
     if (!memberExists) {
