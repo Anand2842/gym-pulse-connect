@@ -18,6 +18,8 @@ type AdminListUsersResponse = {
 // This function will be used to create demo users in development
 export const createDemoUsers = async () => {
   try {
+    console.log('Starting demo users setup...');
+    
     // Check if demo admin exists using auth API instead of profiles table
     const { data: adminUsersData, error: adminListError } = await supabase.auth.admin.listUsers({
       page: 1,
@@ -35,8 +37,11 @@ export const createDemoUsers = async () => {
       user.email === 'admin@example.com'
     );
     
+    console.log('Admin exists:', adminExists);
+    
     // Create admin demo user if not exists
     if (!adminExists) {
+      console.log('Creating admin demo user...');
       // First sign up the user
       const { data: adminAuthData, error: adminAuthError } = await supabase.auth.signUp({
         email: 'admin@example.com',
@@ -56,6 +61,8 @@ export const createDemoUsers = async () => {
       } 
       
       if (adminAuthData.user) {
+        console.log('Admin user created, updating profile...');
+        
         // Update profile directly
         const { error: profileError } = await supabase
           .from('profiles')
@@ -68,6 +75,8 @@ export const createDemoUsers = async () => {
         
         if (profileError) {
           console.error('Error updating admin profile:', profileError);
+        } else {
+          console.log('Admin profile updated successfully');
         }
         
         // Create a gym for admin
@@ -82,6 +91,8 @@ export const createDemoUsers = async () => {
         
         if (gymError) {
           console.error('Error creating demo gym:', gymError);
+        } else {
+          console.log('Demo gym created successfully:', gym);
         }
       }
     }
@@ -103,8 +114,11 @@ export const createDemoUsers = async () => {
       user.email === 'member@example.com'
     );
     
+    console.log('Member exists:', memberExists);
+    
     // Create member demo user if not exists
     if (!memberExists) {
+      console.log('Creating member demo user...');
       // First sign up the user
       const { data: memberAuthData, error: memberAuthError } = await supabase.auth.signUp({
         email: 'member@example.com',
@@ -124,6 +138,8 @@ export const createDemoUsers = async () => {
       }
       
       if (memberAuthData.user) {
+        console.log('Member user created, updating profile...');
+        
         // Update profile directly
         const { error: profileError } = await supabase
           .from('profiles')
@@ -136,6 +152,8 @@ export const createDemoUsers = async () => {
         
         if (profileError) {
           console.error('Error updating member profile:', profileError);
+        } else {
+          console.log('Member profile updated successfully');
         }
         
         // Find the gym to add the member to
@@ -146,9 +164,9 @@ export const createDemoUsers = async () => {
         
         if (gymFetchError) {
           console.error('Error fetching gym:', gymFetchError);
-        }
-        
-        if (gyms && gyms.length > 0) {
+        } else if (gyms && gyms.length > 0) {
+          console.log('Found gym to add member to:', gyms[0].id);
+          
           // Add as member to the gym
           const { error: memberError } = await supabase
             .from('members')
@@ -161,7 +179,11 @@ export const createDemoUsers = async () => {
           
           if (memberError) {
             console.error('Error adding demo member to gym:', memberError);
+          } else {
+            console.log('Demo member added to gym successfully');
           }
+        } else {
+          console.error('No gym found to add member to');
         }
       }
     }

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from '@/components/ui/use-toast';
 
 const SignUpForm = () => {
   const [firstName, setFirstName] = useState('');
@@ -33,16 +34,33 @@ const SignUpForm = () => {
       return;
     }
     
+    // Basic email validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("First name and last name are required");
+      return;
+    }
+    
     setLoading(true);
     
     try {
       const { error } = await signUp(email, password, {
-        first_name: firstName,
-        last_name: lastName,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         phone: phone || undefined
       });
       
       if (!error) {
+        toast({
+          title: "Account created successfully",
+          description: "Please check your email for verification instructions.",
+          variant: "default"
+        });
         // Redirect to verification page or login depending on your flow
         navigate('/login?verification=pending');
       } else {

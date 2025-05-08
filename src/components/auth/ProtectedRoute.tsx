@@ -15,6 +15,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { user, profile, loading } = useAuth();
   const location = useLocation();
+  
+  console.log('Protected route check:', { 
+    user: user ? 'exists' : 'null', 
+    profile: profile ? 'exists' : 'null',
+    loading,
+    requiredRole,
+    path: location.pathname
+  });
 
   // Show loading state
   if (loading) {
@@ -28,27 +36,33 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Redirect if not authenticated
   if (!user) {
+    console.log('User not authenticated, redirecting to', redirectTo);
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  // If a specific role is required, check it (requires profile to be loaded)
+  // If a specific role is required, check it 
   if (requiredRole && profile) {
+    console.log('Role check required:', requiredRole);
+    
     // For now we're determining role by URL paths, but later we'll use DB roles
     const isAdmin = location.pathname.includes('/admin');
     const isMember = location.pathname.includes('/member');
     
     // Check if user is trying to access admin routes but is not an admin
     if (requiredRole === 'admin' && !isAdmin) {
+      console.log('Admin role required but user is not an admin');
       return <Navigate to="/member/dashboard" replace />;
     }
     
     // Check if user is trying to access member routes but should be an admin
     if (requiredRole === 'member' && !isMember) {
+      console.log('Member role required but user is not a member');
       return <Navigate to="/admin/dashboard" replace />;
     }
   }
 
   // User is authenticated (and has the required role if specified)
+  console.log('Access granted to protected route');
   return <Outlet />;
 };
 

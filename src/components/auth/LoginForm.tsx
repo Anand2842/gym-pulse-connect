@@ -1,10 +1,11 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -28,11 +29,32 @@ const LoginForm = () => {
         return;
       }
       
-      // Check if user is an admin (this will be improved with proper role system)
-      // For now, we're using demo accounts as specified in the UI
-      if (email.includes('admin')) {
-        navigate('/admin/dashboard');
-      } else {
+      // Check if the user is an admin or a member
+      if (data?.user) {
+        // Check if user is gym owner or staff (admin)
+        const { data: gyms } = await supabase
+          .from('gyms')
+          .select('id')
+          .eq('owner_id', data.user.id);
+        
+        if (gyms && gyms.length > 0) {
+          // User is a gym owner
+          navigate('/admin/dashboard');
+          return;
+        }
+        
+        const { data: staff } = await supabase
+          .from('gym_staff')
+          .select('id')
+          .eq('staff_id', data.user.id);
+        
+        if (staff && staff.length > 0) {
+          // User is gym staff
+          navigate('/admin/dashboard');
+          return;
+        }
+        
+        // Default to member dashboard if not an admin
         navigate('/member/dashboard');
       }
     } catch (err: any) {
@@ -49,14 +71,20 @@ const LoginForm = () => {
     
     setIsLoading(true);
     try {
-      const { error } = await signIn(demoEmail, 'password');
+      const { error, data } = await signIn(demoEmail, 'password');
       
       if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive"
+        });
         setError(error.message);
         return;
       }
       
-      if (demoEmail.includes('admin')) {
+      // Direct demo users to the appropriate dashboard
+      if (demoEmail === 'admin@example.com') {
         navigate('/admin/dashboard');
       } else {
         navigate('/member/dashboard');

@@ -32,18 +32,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initializeAuth = async () => {
       setLoading(true);
       
-      // Get initial session
-      const { data: { session: initialSession } } = await supabase.auth.getSession();
-      setSession(initialSession);
-      setUser(initialSession?.user || null);
-      
-      if (initialSession?.user) {
-        await fetchProfile(initialSession.user.id);
-      }
-      
-      // Set up auth listener
+      // Set up auth listener FIRST to prevent missing auth events
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, currentSession) => {
+          console.log('Auth state change:', event, currentSession ? 'session exists' : 'no session');
           setSession(currentSession);
           setUser(currentSession?.user || null);
           
@@ -54,6 +46,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       );
+      
+      // THEN check for existing session
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
+      setSession(initialSession);
+      setUser(initialSession?.user || null);
+      
+      if (initialSession?.user) {
+        await fetchProfile(initialSession.user.id);
+      }
       
       setLoading(false);
       
@@ -69,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch user profile from profiles table
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -80,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
+      console.log('Profile fetched:', data);
       setProfile(data);
     } catch (error) {
       console.error('Error in fetchProfile:', error);
@@ -95,9 +98,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('Signing in user:', email);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
+        console.error('Sign in error:', error.message);
         toast({
           title: "Login failed",
           description: error.message,
@@ -106,8 +111,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error, data: null };
       }
       
+      console.log('Sign in successful');
       return { data, error: null };
     } catch (error: any) {
+      console.error('Exception in sign in:', error);
       toast({
         title: "Login failed",
         description: error.message,
@@ -124,6 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userData: { first_name: string; last_name: string; phone?: string }
   ) => {
     try {
+      console.log('Signing up user:', email);
       // Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -138,6 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (error) {
+        console.error('Sign up error:', error.message);
         toast({
           title: "Registration failed",
           description: error.message,
@@ -148,6 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Update profile directly if needed
       if (data.user) {
+        console.log('User created, ensuring profile is set up');
         await supabase
           .from('profiles')
           .update({
@@ -166,6 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return { data, error: null };
     } catch (error: any) {
+      console.error('Exception in sign up:', error);
       toast({
         title: "Registration failed",
         description: error.message,
