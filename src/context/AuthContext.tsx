@@ -40,7 +40,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(currentSession?.user || null);
           
           if (event === 'SIGNED_IN' && currentSession?.user) {
-            await fetchProfile(currentSession.user.id);
+            // Use setTimeout to prevent Supabase deadlocks
+            setTimeout(() => {
+              fetchProfile(currentSession.user.id);
+            }, 0);
           } else if (event === 'SIGNED_OUT') {
             setProfile(null);
           }
@@ -131,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userData: { first_name: string; last_name: string; phone?: string }
   ) => {
     try {
-      console.log('Signing up user:', email);
+      console.log('Signing up user:', email, 'with data:', userData);
       // Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -155,22 +158,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error, data: null };
       }
       
-      // Update profile directly if needed
-      if (data.user) {
-        console.log('User created, ensuring profile is set up');
-        await supabase
-          .from('profiles')
-          .update({
-            first_name: userData.first_name,
-            last_name: userData.last_name,
-            phone: userData.phone || null
-          })
-          .eq('id', data.user.id);
-      }
+      console.log('User created successfully:', data);
       
       toast({
         title: "Registration successful",
-        description: "Please check your email for verification.",
+        description: "You can now sign in with your credentials.",
         variant: "default"
       });
       

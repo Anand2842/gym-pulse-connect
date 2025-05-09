@@ -49,6 +49,13 @@ const SignUpForm = () => {
     setLoading(true);
     
     try {
+      console.log('Signing up with details:', {
+        email,
+        firstName,
+        lastName,
+        phone: phone || undefined
+      });
+      
       const { error } = await signUp(email, password, {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -58,15 +65,25 @@ const SignUpForm = () => {
       if (!error) {
         toast({
           title: "Account created successfully",
-          description: "Please check your email for verification instructions.",
+          description: "You can now sign in with your credentials.",
           variant: "default"
         });
-        // Redirect to verification page or login depending on your flow
-        navigate('/login?verification=pending');
+        
+        // Redirect to login page
+        navigate('/login?signup=success');
       } else {
-        setError(error.message);
+        console.error('Signup error:', error);
+        setError(error.message || 'Failed to sign up');
+        
+        // Check for specific error types
+        if (error.message?.includes('User already registered')) {
+          setError('This email is already registered. Please login instead.');
+        } else if (error.message?.includes('Email')) {
+          setError('Please check your email format and try again.');
+        }
       }
     } catch (err: any) {
+      console.error('Exception in sign up:', err);
       setError(err.message || 'Failed to sign up');
     } finally {
       setLoading(false);

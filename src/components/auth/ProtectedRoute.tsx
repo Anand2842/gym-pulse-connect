@@ -3,6 +3,7 @@ import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProtectedRouteProps {
   requiredRole?: 'admin' | 'member' | null;
@@ -14,18 +15,101 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   redirectTo = '/login'
 }) => {
   const { user, profile, loading } = useAuth();
+  const [isRoleVerified, setIsRoleVerified] = React.useState(false);
+  const [hasRequiredRole, setHasRequiredRole] = React.useState(false);
+  const [isRoleLoading, setIsRoleLoading] = React.useState(true);
   const location = useLocation();
+  
+  React.useEffect(() => {
+    const verifyUserRole = async () => {
+      if (!user || !requiredRole) {
+        setIsRoleVerified(true);
+        setIsRoleLoading(false);
+        return;
+      }
+      
+      try {
+        setIsRoleLoading(true);
+        
+        if (requiredRole === 'admin') {
+          // Check if user is a gym owner
+          const { data: gyms, error: gymsError } = await supabase
+            .from('gyms')
+            .select('id')
+            .eq('owner_id', user.id);
+            
+          if (!gymsError && gyms && gyms.length > 0) {
+            setHasRequiredRole(true);
+            setIsRoleVerified(true);
+            setIsRoleLoading(false);
+            return;
+          }
+          
+          // Or check if user is gym staff
+          const { data: staff, error: staffError } = await supabase
+            .from('gym_staff')
+            .select('id')
+            .eq('staff_id', user.id);
+            
+          if (!staffError && staff && staff.length > 0) {
+            setHasRequiredRole(true);
+            setIsRoleVerified(true);
+            setIsRoleLoading(false);
+            return;
+          }
+          
+          // If got here, user doesn't have admin role
+          setHasRequiredRole(false);
+          
+        } else if (requiredRole === 'member') {
+          // Check if user is a member
+          const { data: members, error: membersError } = await supabase
+            .from('members')
+            .select('id')
+            .eq('profile_id', user.id);
+            
+          if (!membersError && members && members.length > 0) {
+            setHasRequiredRole(true);
+            setIsRoleVerified(true);
+            setIsRoleLoading(false);
+            return;
+          }
+          
+          // If got here, user doesn't have member role
+          setHasRequiredRole(false);
+        }
+        
+        setIsRoleVerified(true);
+        
+      } catch (error) {
+        console.error('Error verifying user role:', error);
+        setHasRequiredRole(false);
+      } finally {
+        setIsRoleLoading(false);
+      }
+    };
+    
+    if (user && requiredRole) {
+      verifyUserRole();
+    } else {
+      setIsRoleVerified(true);
+      setIsRoleLoading(false);
+    }
+  }, [user, requiredRole]);
   
   console.log('Protected route check:', { 
     user: user ? 'exists' : 'null', 
     profile: profile ? 'exists' : 'null',
     loading,
+    isRoleLoading,
+    isRoleVerified,
+    hasRequiredRole,
     requiredRole,
     path: location.pathname
   });
 
   // Show loading state
-  if (loading) {
+  if (loading || isRoleLoading) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-gym-primary" />
@@ -40,28 +124,27 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  // If a specific role is required, check it 
-  if (requiredRole && profile) {
-    console.log('Role check required:', requiredRole);
+  // If a specific role is required and verification is complete, check it
+  if (requiredRole && isRoleVerified) {
+    console.log('Role check required:', requiredRole, 'Has role:', hasRequiredRole);
     
-    // For now we're determining role by URL paths, but later we'll use DB roles
-    const isAdmin = location.pathname.includes('/admin');
-    const isMember = location.pathname.includes('/member');
-    
-    // Check if user is trying to access admin routes but is not an admin
-    if (requiredRole === 'admin' && !isAdmin) {
-      console.log('Admin role required but user is not an admin');
-      return <Navigate to="/member/dashboard" replace />;
-    }
-    
-    // Check if user is trying to access member routes but should be an admin
-    if (requiredRole === 'member' && !isMember) {
-      console.log('Member role required but user is not a member');
-      return <Navigate to="/admin/dashboard" replace />;
+    // If user doesn't have the required role, redirect them
+    if (!hasRequiredRole) {
+      // Redirect member trying to access admin area to member dashboard
+      if (requiredRole === 'admin') {
+        console.log('Admin role required but user is not an admin');
+        return <Navigate to="/member/dashboard" replace />;
+      }
+      
+      // Redirect admin trying to access member area to admin dashboard
+      if (requiredRole === 'member') {
+        console.log('Member role required but user is not a member');
+        return <Navigate to="/admin/dashboard" replace />;
+      }
     }
   }
 
-  // User is authenticated (and has the required role if specified)
+  // User is authenticated and has the required role (if specified)
   console.log('Access granted to protected route');
   return <Outlet />;
 };
