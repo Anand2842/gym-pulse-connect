@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const SignUpForm = () => {
   const [firstName, setFirstName] = useState('');
@@ -56,13 +57,40 @@ const SignUpForm = () => {
         phone: phone || undefined
       });
       
-      const { error } = await signUp(email, password, {
+      const { error, data } = await signUp(email, password, {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         phone: phone || undefined
       });
       
       if (!error) {
+        console.log('User created successfully:', data);
+        
+        // Find an existing gym to associate with
+        const { data: existingGyms, error: gymsError } = await supabase
+          .from('gyms')
+          .select('id')
+          .limit(1);
+        
+        if (gymsError) {
+          console.error('Error finding gym:', gymsError);
+        } else if (existingGyms && existingGyms.length > 0 && data?.user) {
+          // Create a member record for the new user
+          const { error: memberError } = await supabase
+            .from('members')
+            .insert({
+              profile_id: data.user.id,
+              gym_id: existingGyms[0].id,
+              active: true
+            });
+            
+          if (memberError) {
+            console.error('Error creating member record:', memberError);
+          } else {
+            console.log('Successfully created member record for new user');
+          }
+        }
+        
         toast({
           title: "Account created successfully",
           description: "You can now sign in with your credentials.",

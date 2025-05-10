@@ -35,6 +35,12 @@ const LoginForm = () => {
     setError(null);
     setIsLoading(true);
 
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter both email and password");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       console.log('Attempting to sign in with:', email);
       const { error, data } = await signIn(email, password);
@@ -47,6 +53,7 @@ const LoginForm = () => {
         if (error.message?.includes('Invalid login credentials')) {
           setError('Incorrect email or password. Please try again.');
         }
+        setIsLoading(false);
         return;
       }
       
@@ -54,71 +61,121 @@ const LoginForm = () => {
       
       // Check if the user is an admin or a member
       if (data?.user) {
-        // Check if user is gym owner or staff (admin)
-        const { data: gyms, error: gymsError } = await supabase
-          .from('gyms')
-          .select('id')
-          .eq('owner_id', data.user.id);
-        
-        if (gymsError) {
-          console.error('Error checking gym ownership:', gymsError);
-        }
-        
-        if (gyms && gyms.length > 0) {
-          // User is a gym owner
-          console.log('User is a gym owner, redirecting to admin dashboard');
-          navigate('/admin/dashboard');
-          return;
-        }
-        
-        const { data: staff, error: staffError } = await supabase
-          .from('gym_staff')
-          .select('id')
-          .eq('staff_id', data.user.id);
-        
-        if (staffError) {
-          console.error('Error checking staff status:', staffError);
-        }
-        
-        if (staff && staff.length > 0) {
-          // User is gym staff
-          console.log('User is gym staff, redirecting to admin dashboard');
-          navigate('/admin/dashboard');
-          return;
-        }
-        
-        // Check if user is a member
-        const { data: memberData, error: memberError } = await supabase
-          .from('members')
-          .select('id')
-          .eq('profile_id', data.user.id);
+        try {
+          // Check if user is gym owner or staff (admin)
+          const { data: gyms, error: gymsError } = await supabase
+            .from('gyms')
+            .select('id')
+            .eq('owner_id', data.user.id);
           
-        if (memberError) {
-          console.error('Error checking member status:', memberError);
-        }
-        
-        if (memberData && memberData.length > 0) {
-          // User is a gym member
-          console.log('User is a gym member, redirecting to member dashboard');
+          if (gymsError) {
+            console.error('Error checking gym ownership:', gymsError);
+          }
+          
+          if (gyms && gyms.length > 0) {
+            // User is a gym owner
+            console.log('User is a gym owner, redirecting to admin dashboard');
+            navigate('/admin/dashboard');
+            return;
+          }
+          
+          const { data: staff, error: staffError } = await supabase
+            .from('gym_staff')
+            .select('id')
+            .eq('staff_id', data.user.id);
+          
+          if (staffError) {
+            console.error('Error checking staff status:', staffError);
+          }
+          
+          if (staff && staff.length > 0) {
+            // User is gym staff
+            console.log('User is gym staff, redirecting to admin dashboard');
+            navigate('/admin/dashboard');
+            return;
+          }
+          
+          // Check if user is a member
+          const { data: memberData, error: memberError } = await supabase
+            .from('members')
+            .select('id')
+            .eq('profile_id', data.user.id);
+            
+          if (memberError) {
+            console.error('Error checking member status:', memberError);
+          }
+          
+          if (memberData && memberData.length > 0) {
+            // User is a gym member
+            console.log('User is a gym member, redirecting to member dashboard');
+            navigate('/member/dashboard');
+            return;
+          }
+          
+          // If we got here, the user exists but doesn't have a role yet
+          console.log('User has no role assigned yet, assigning as member by default');
+          
+          // Auto-enroll as a member for new signups
+          try {
+            // Find an existing gym to associate with
+            const { data: existingGyms } = await supabase
+              .from('gyms')
+              .select('id')
+              .limit(1);
+              
+            if (existingGyms && existingGyms.length > 0) {
+              const gymId = existingGyms[0].id;
+              
+              // Create a member record
+              const { error: memberCreateError } = await supabase
+                .from('members')
+                .insert({
+                  profile_id: data.user.id,
+                  gym_id: gymId,
+                  active: true,
+                });
+                
+              if (memberCreateError) {
+                console.error('Error creating member record:', memberCreateError);
+                toast({
+                  title: "Login partially successful",
+                  description: "Your account was created but member role assignment failed. Please contact support.",
+                  variant: "destructive"
+                });
+              } else {
+                console.log('Successfully created member record for new user');
+                toast({
+                  title: "Login successful",
+                  description: "You have been automatically assigned as a member.",
+                  variant: "default"
+                });
+                navigate('/member/dashboard');
+                return;
+              }
+            } else {
+              console.log('No gym found to assign member to');
+            }
+          } catch (err) {
+            console.error('Error in auto-enrollment process:', err);
+          }
+          
+          toast({
+            title: "Login successful",
+            description: "But your account doesn't have a role assigned yet. We're redirecting you to the member dashboard.",
+            variant: "default"
+          });
+          
+          // Default to member dashboard
           navigate('/member/dashboard');
-          return;
+        } catch (err) {
+          console.error('Error checking user roles:', err);
+          setIsLoading(false);
+          setError('Error determining user role. Please try again.');
         }
-        
-        // If we got here, the user exists but doesn't have a role yet
-        console.log('User has no role assigned yet');
-        toast({
-          title: "Login successful",
-          description: "Your account doesn't have a role assigned yet. Please contact the administrator.",
-          variant: "default"
-        });
-        
-        // Default to member dashboard
-        navigate('/member/dashboard');
       }
     } catch (err: any) {
       console.error('Exception during login:', err);
       setError(err.message || 'Failed to sign in');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -141,6 +198,7 @@ const LoginForm = () => {
           variant: "destructive"
         });
         setError(error.message);
+        setIsLoading(false);
         return;
       }
       
@@ -155,7 +213,6 @@ const LoginForm = () => {
     } catch (err: any) {
       console.error('Exception during demo login:', err);
       setError(err.message || 'Failed to sign in');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -252,6 +309,7 @@ const LoginForm = () => {
             variant="outline"
             onClick={() => handleQuickLogin('admin@example.com')}
             className="text-sm transition-colors hover:bg-gym-primary/10"
+            disabled={isLoading}
           >
             Demo as Admin
           </Button>
@@ -260,6 +318,7 @@ const LoginForm = () => {
             variant="outline"
             onClick={() => handleQuickLogin('member@example.com')}
             className="text-sm transition-colors hover:bg-gym-primary/10"
+            disabled={isLoading}
           >
             Demo as Member
           </Button>

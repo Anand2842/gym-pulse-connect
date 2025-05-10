@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AuthContextType } from '@/types/auth';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuthMethods } from '@/hooks/useAuthMethods';
+import { toast } from '@/components/ui/use-toast';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -45,7 +46,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(initialSession?.user || null);
       
       if (initialSession?.user) {
-        await fetchProfile(initialSession.user.id);
+        try {
+          const profileData = await fetchProfile(initialSession.user.id);
+          if (!profileData) {
+            console.warn('No profile found for user, attempting to create one');
+            try {
+              // Try to create a profile if it doesn't exist
+              const { error: createError } = await supabase.from('profiles').insert({
+                id: initialSession.user.id,
+                first_name: initialSession.user.user_metadata.first_name || '',
+                last_name: initialSession.user.user_metadata.last_name || '',
+                phone: initialSession.user.user_metadata.phone || null
+              });
+              
+              if (createError) {
+                console.error('Error creating profile:', createError);
+              } else {
+                // Refetch profile after creation
+                await fetchProfile(initialSession.user.id);
+              }
+            } catch (error) {
+              console.error('Error creating profile:', error);
+            }
+          }
+        } catch (error) {
+          console.error('Error during profile initialization:', error);
+        }
       }
       
       setLoading(false);
@@ -69,6 +95,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     await authSignOut();
     setProfile(null);
+    toast({
+      title: "Signed out successfully",
+      description: "You have been logged out of your account.",
+    });
   };
 
   const value: AuthContextType = {

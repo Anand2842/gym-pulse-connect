@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
 interface ProtectedRouteProps {
   requiredRole?: 'admin' | 'member' | null;
@@ -15,12 +16,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   redirectTo = '/login'
 }) => {
   const { user, profile, loading } = useAuth();
-  const [isRoleVerified, setIsRoleVerified] = React.useState(false);
-  const [hasRequiredRole, setHasRequiredRole] = React.useState(false);
-  const [isRoleLoading, setIsRoleLoading] = React.useState(true);
+  const [isRoleVerified, setIsRoleVerified] = useState(false);
+  const [hasRequiredRole, setHasRequiredRole] = useState(false);
+  const [isRoleLoading, setIsRoleLoading] = useState(true);
   const location = useLocation();
   
-  React.useEffect(() => {
+  useEffect(() => {
     const verifyUserRole = async () => {
       if (!user || !requiredRole) {
         setIsRoleVerified(true);
@@ -73,6 +74,46 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
             setIsRoleVerified(true);
             setIsRoleLoading(false);
             return;
+          }
+          
+          // If we get here, check if we need to auto-assign member role
+          // This is for users who sign up but don't have a role yet
+          try {
+            // Find an existing gym to associate with
+            const { data: existingGyms } = await supabase
+              .from('gyms')
+              .select('id')
+              .limit(1);
+              
+            if (existingGyms && existingGyms.length > 0) {
+              const gymId = existingGyms[0].id;
+              
+              // Create a member record
+              const { error: memberCreateError } = await supabase
+                .from('members')
+                .insert({
+                  profile_id: user.id,
+                  gym_id: gymId,
+                  active: true,
+                });
+                
+              if (memberCreateError) {
+                console.error('Error auto-creating member record:', memberCreateError);
+              } else {
+                console.log('Successfully auto-created member record for user');
+                toast({
+                  title: "Member role assigned",
+                  description: "You have been automatically assigned as a member.",
+                  variant: "default"
+                });
+                setHasRequiredRole(true);
+                setIsRoleVerified(true);
+                setIsRoleLoading(false);
+                return;
+              }
+            }
+          } catch (err) {
+            console.error('Error in auto-role assignment:', err);
           }
           
           // If got here, user doesn't have member role
@@ -133,6 +174,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       // Redirect member trying to access admin area to member dashboard
       if (requiredRole === 'admin') {
         console.log('Admin role required but user is not an admin');
+        toast({
+          title: "Access Denied",
+          description: "You need admin privileges to access this page. Redirecting to member dashboard.",
+          variant: "destructive",
+        });
         return <Navigate to="/member/dashboard" replace />;
       }
       
